@@ -8,3 +8,6 @@
 [submodule "lib/witnet-solidity-bridge"]
 	path = lib/witnet-solidity-bridge
 	url = https://github.com/witnet/witnet-solidity-bridge
+[submodule "lib/solady"]
+	path = lib/solady
+	url = https://github.com/Vectorized/solady
