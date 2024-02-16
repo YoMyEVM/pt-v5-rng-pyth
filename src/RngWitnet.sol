@@ -1,25 +1,33 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import { IWitnetRandomness } from "witnet/interfaces/IWitnetRandomness.sol";
 import { RNGInterface } from "rng-contracts/RNGInterface.sol";
 
+import { Requestor } from "./Requestor.sol";
+
 contract RngWitnet is RNGInterface {
-    /**
-    * @notice Emitted when a new request for a random number has been submitted
-    * @param requestId The indexed ID of the request used to get the results of the RNG service
-    * @param sender The indexed address of the sender of the request
-    */
-    event RandomNumberRequested(uint32 indexed requestId, address indexed sender);
+    error NoPayment();
 
-    /**
-    * @notice Emitted when an existing request for a random number has been completed
-    * @param requestId The indexed ID of the request used to get the results of the RNG service
-    * @param randomNumber The random number produced by the 3rd-party service
-    */
-    event RandomNumberCompleted(uint32 indexed requestId, uint256 randomNumber);
+    IWitnetRandomness public immutable witnetRandomness;
 
-    constructor() public {
-        
+    mapping(address user => Requestor) public requestors;
+
+    uint32 public lastRequestId;
+
+    mapping(uint32 requestId => uint32 lockBlock) public requests;
+
+    constructor(IWitnetRandomness _witnetRandomness) {
+        witnetRandomness = _witnetRandomness;
+    }
+
+    function getRequestor(address user) public returns (Requestor) {
+        Requestor requestor = requestors[user];
+        if (address(requestor) == address(0)) {
+            requestor = new Requestor();
+            requestors[user] = requestor;
+        }
+        return requestor;
     }
 
     /**
@@ -27,7 +35,7 @@ contract RngWitnet is RNGInterface {
     * @return requestId The last request id used in the last request
     */
     function getLastRequestId() external view returns (uint32 requestId) {
-
+        return lastRequestId;
     }
 
     /**
@@ -36,7 +44,11 @@ contract RngWitnet is RNGInterface {
     * @return requestFee The fee required to be paid to make a request
     */
     function getRequestFee() external view returns (address feeToken, uint256 requestFee) {
+        return (address(0), 0);
+    }
 
+    function estimateRandomizeFee(uint256 _gasPrice) external view returns (uint256) {
+        return witnetRandomness.estimateRandomizeFee(_gasPrice);
     }
 
     /**
@@ -47,8 +59,24 @@ contract RngWitnet is RNGInterface {
     * @return lockBlock The block number at which the RNG service will start generating time-delayed randomness.
     * The calling contract should "lock" all activity until the result is available via the `requestId`
     */
-    function requestRandomNumber() external returns (uint32 requestId, uint32 lockBlock) {
+    function requestRandomNumber() external payable returns (uint32 requestId, uint32 lockBlock) {
+        if (msg.value == 0) {
+            revert NoPayment();
+        }
+        Requestor requestor = getRequestor(msg.sender);
+        unchecked {
+            requestId = ++lastRequestId;
+            lockBlock = uint32(block.number);
+        }
+        requests[requestId] = lockBlock;
+        requestor.randomize{value: msg.value}(witnetRandomness);
 
+        emit RandomNumberRequested(requestId, msg.sender);
+    }
+
+    function withdraw() external {
+        Requestor requestor = requestors[msg.sender];
+        requestor.withdraw(payable(msg.sender));
     }
 
     /**
@@ -58,7 +86,7 @@ contract RngWitnet is RNGInterface {
     * @return isCompleted True if the request has completed and a random number is available, false otherwise
     */
     function isRequestComplete(uint32 requestId) external view returns (bool isCompleted) {
-
+        return witnetRandomness.isRandomized(requests[requestId]);
     }
 
     /**
@@ -66,7 +94,17 @@ contract RngWitnet is RNGInterface {
     * @param requestId The ID of the request used to get the results of the RNG service
     * @return randomNum The random number
     */
-    function randomNumber(uint32 requestId) external returns (uint256 randomNum) {
+    function randomNumber(uint32 requestId) external view returns (uint256 randomNum) {    
+        return uint256(witnetRandomness.getRandomnessAfter(requests[requestId]));
+    }
 
-  }
+    /**
+    * @notice Returns the timestamps at which the request was completed
+    * @param requestId The ID of the request used to get the results of the RNG service
+    * @return completedAtTimestamp The timestamp at which the request was completed
+    */
+    function completedAt(uint32 requestId) external view returns (uint64 completedAtTimestamp) {
+        return 0;
+    }
+
 }

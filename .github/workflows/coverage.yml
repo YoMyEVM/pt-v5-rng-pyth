@@ -1,4 +1,4 @@
-name: coverage
+name: Tests with 100% Coverage
 
 on: ["push", "pull_request"]
 
@@ -29,11 +29,11 @@ jobs:
           forge build --sizes
         id: build
 
-      - name: Run Forge test with gas report
+      - name: Run Forge test
         env:
           MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
         run: |
-          forge test --gas-report
+          forge test
         id: test
 
       - name: Install lcov
@@ -43,12 +43,12 @@ jobs:
         env:
           MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
         run: |
-          forge coverage --report lcov && lcov --extract lcov.info -o lcov.info 'src/*'
+          forge coverage --no-match-contracts .*ForkTest --report lcov && lcov --remove lcov.info -o lcov.info 'test/*' 'script/*'
         id: coverage
 
       - name: Report code coverage
         uses: zgosalvez/github-actions-report-lcov@v1.5.0
         with:
           coverage-files: lcov.info
-          minimum-coverage: 90
+          minimum-coverage: 100
           github-token: ${{ secrets.GITHUB_TOKEN }}
