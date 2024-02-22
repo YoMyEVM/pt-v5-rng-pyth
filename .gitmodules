@@ -8,3 +8,6 @@
 [submodule "lib/solady"]
 	path = lib/solady
 	url = https://github.com/Vectorized/solady
+[submodule "lib/pt-v5-draw-manager"]
+	path = lib/pt-v5-draw-manager
+	url = https://github.com/GenerationSoftware/pt-v5-draw-manager
