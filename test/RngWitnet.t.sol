@@ -20,7 +20,7 @@ contract RngWitnetTest is Test {
 
     function testRequestRandomNumber() external {
         vm.mockCall(address(witnetRandomness), 1e18, abi.encodeWithSelector(IWitnetRandomness.randomize.selector), abi.encode(0.5e18));
-        (uint32 requestId, uint32 lockBlock) = rngWitnet.requestRandomNumber{value: 1e18}();
+        (uint32 requestId, uint256 lockBlock) = rngWitnet.requestRandomNumber{value: 1e18}();
         assertEq(requestId, 1);
         assertEq(lockBlock, block.number);
         assertEq(address(rngWitnet.getRequestor(address(this))).balance, 1e18, "witnet balance should be 1e18");
@@ -28,10 +28,10 @@ contract RngWitnetTest is Test {
 
     function testWithdraw() public {
         vm.mockCall(address(witnetRandomness), 1e18, abi.encodeWithSelector(IWitnetRandomness.randomize.selector), abi.encode(0.5e18));
-        (uint32 requestId, uint32 lockBlock) = rngWitnet.requestRandomNumber{value: 1e18}();
+        rngWitnet.requestRandomNumber{value: 1e18}();
         rngWitnet.withdraw();
         assertEq(address(this).balance, 1000e18, "balance is restored");
     }
 
-    fallback() external payable {}
+    receive() external payable {}
 }

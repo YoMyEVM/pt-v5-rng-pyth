@@ -8,7 +8,7 @@ contract Requestor {
 
     address public immutable creator;
 
-    constructor() public {
+    constructor() {
         creator = msg.sender;
     }
 
@@ -20,7 +20,7 @@ contract Requestor {
         _to.transfer(address(this).balance);
     }
 
-    fallback() payable external {}
+    receive() payable external {}
 
     modifier onlyCreator() {
         if(msg.sender != address(creator)) {
