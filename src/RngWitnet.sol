@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 import { IWitnetRandomness } from "witnet/interfaces/IWitnetRandomness.sol";
 import { IRng } from "pt-v5-draw-manager/interfaces/IRng.sol";
+import { DrawManager } from "pt-v5-draw-manager/DrawManager.sol";
 
 import { Requestor } from "./Requestor.sol";
 
@@ -59,7 +60,7 @@ contract RngWitnet is IRng {
     * @return lockBlock The block number at which the RNG service will start generating time-delayed randomness.
     * The calling contract should "lock" all activity until the result is available via the `requestId`
     */
-    function requestRandomNumber() external payable returns (uint32 requestId, uint256 lockBlock) {
+    function requestRandomNumber() public payable returns (uint32 requestId, uint256 lockBlock) {
         if (msg.value == 0) {
             revert NoPayment();
         }
@@ -96,5 +97,10 @@ contract RngWitnet is IRng {
     */
     function randomNumber(uint32 requestId) external view returns (uint256 randomNum) {    
         return uint256(witnetRandomness.getRandomnessAfter(requests[requestId]));
+    }
+
+    function startDraw(DrawManager _drawManager, address _rewardRecipient) external payable {
+        (uint32 requestId,) = requestRandomNumber();
+        _drawManager.startDraw(_rewardRecipient, requestId);
     }
 }
