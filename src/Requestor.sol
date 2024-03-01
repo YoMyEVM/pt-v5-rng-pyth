@@ -12,8 +12,8 @@ contract Requestor {
         creator = msg.sender;
     }
 
-    function randomize(IWitnetRandomness _witnetRandomness) external payable onlyCreator {
-        _witnetRandomness.randomize{ value: msg.value }();
+    function randomize(uint value, IWitnetRandomness _witnetRandomness) external payable onlyCreator {
+        _witnetRandomness.randomize{ value: value }();
     }
 
     function withdraw(address payable _to) external onlyCreator {
