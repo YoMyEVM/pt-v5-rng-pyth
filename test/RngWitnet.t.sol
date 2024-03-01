@@ -21,7 +21,7 @@ contract RngWitnetTest is Test {
 
     function testRequestRandomNumber() external {
         vm.mockCall(address(witnetRandomness), 1e18, abi.encodeWithSelector(IWitnetRandomness.randomize.selector), abi.encode(0.5e18));
-        (uint32 requestId, uint256 lockBlock) = rngWitnet.requestRandomNumber{value: 1e18}();
+        (uint32 requestId, uint256 lockBlock) = rngWitnet.requestRandomNumber{value: 1e18}(1e18);
         assertEq(requestId, 1);
         assertEq(lockBlock, block.number);
         assertEq(address(rngWitnet.getRequestor(address(this))).balance, 1e18, "witnet balance should be 1e18");
@@ -31,13 +31,13 @@ contract RngWitnetTest is Test {
         DrawManager drawManager = DrawManager(makeAddr("DrawManager"));
         vm.mockCall(address(drawManager), abi.encodeWithSelector(drawManager.startDraw.selector, address(this), 1), abi.encode());
         vm.mockCall(address(witnetRandomness), 1e18, abi.encodeWithSelector(IWitnetRandomness.randomize.selector), abi.encode(0.5e18));
-        rngWitnet.startDraw{value: 1e18}(drawManager, address(this));
+        rngWitnet.startDraw{value: 1e18}(1e18, drawManager, address(this));
         assertEq(address(rngWitnet.getRequestor(address(this))).balance, 1e18, "witnet balance should be 1e18");
     }
 
     function testWithdraw() public {
         vm.mockCall(address(witnetRandomness), 1e18, abi.encodeWithSelector(IWitnetRandomness.randomize.selector), abi.encode(0.5e18));
-        rngWitnet.requestRandomNumber{value: 1e18}();
+        rngWitnet.requestRandomNumber{value: 1e18}(1e18);
         rngWitnet.withdraw();
         assertEq(address(this).balance, 1000e18, "balance is restored");
     }

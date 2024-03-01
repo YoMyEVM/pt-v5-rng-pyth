@@ -23,7 +23,7 @@ contract RngWitnetForkTest is Test {
     }
 
     function testRequestRandomNumberFromFork() external {
-        (uint32 requestId, uint256 lockBlock) = rngWitnet.requestRandomNumber{value: 1e18}();
+        (uint32 requestId, uint256 lockBlock) = rngWitnet.requestRandomNumber{value: 1e18}(1e18);
         assertEq(requestId, 1);
         assertEq(lockBlock, block.number);
     }

@@ -52,25 +52,14 @@ contract RngWitnet is IRng {
         return witnetRandomness.estimateRandomizeFee(_gasPrice);
     }
 
-    /**
-    * @notice Sends a request for a random number to the 3rd-party service
-    * @dev Some services will complete the request immediately, others may have a time-delay
-    * @dev Some services require payment in the form of a token, such as $LINK for Chainlink VRF
-    * @return requestId The ID of the request used to get the results of the RNG service
-    * @return lockBlock The block number at which the RNG service will start generating time-delayed randomness.
-    * The calling contract should "lock" all activity until the result is available via the `requestId`
-    */
-    function requestRandomNumber() public payable returns (uint32 requestId, uint256 lockBlock) {
-        if (msg.value == 0) {
-            revert NoPayment();
-        }
+    function requestRandomNumber(uint256 rngPaymentAmount) public payable returns (uint32 requestId, uint256 lockBlock) {
         Requestor requestor = getRequestor(msg.sender);
         unchecked {
             requestId = ++lastRequestId;
             lockBlock = block.number;
         }
         requests[requestId] = lockBlock;
-        requestor.randomize{value: msg.value}(witnetRandomness);
+        requestor.randomize{value: msg.value}(rngPaymentAmount, witnetRandomness);
 
         emit RandomNumberRequested(requestId, msg.sender);
     }
@@ -99,8 +88,8 @@ contract RngWitnet is IRng {
         return uint256(witnetRandomness.getRandomnessAfter(requests[requestId]));
     }
 
-    function startDraw(DrawManager _drawManager, address _rewardRecipient) external payable {
-        (uint32 requestId,) = requestRandomNumber();
+    function startDraw(uint256 rngPaymentAmount, DrawManager _drawManager, address _rewardRecipient) external payable {
+        (uint32 requestId,) = requestRandomNumber(rngPaymentAmount);
         _drawManager.startDraw(_rewardRecipient, requestId);
     }
 }
