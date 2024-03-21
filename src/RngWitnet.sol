@@ -7,26 +7,41 @@ import { DrawManager } from "pt-v5-draw-manager/DrawManager.sol";
 
 import { Requestor } from "./Requestor.sol";
 
-contract RngWitnet is IRng {
-    error NoPayment();
 
+/// @title RngWitnet
+/// @notice A contract that requests random numbers from the Witnet Randomness Oracle
+contract RngWitnet is IRng {
+
+    /// @notice Emitted when a new random number is requested
+    /// @param requestId The id of the request
+    /// @param sender The address that requested the random number
     event RandomNumberRequested(
         uint32 indexed requestId,
         address indexed sender
     );
-
+    
+    /// @notice The Witnet Randomness contract
     IWitnetRandomness public immutable witnetRandomness;
 
+    /// @notice A mapping of addresses that requested RNG to their corresponding Requestor contract
     mapping(address user => Requestor) public requestors;
 
+    /// @notice The last request id used by the RNG service
     uint32 public lastRequestId;
 
+    /// @notice A mapping of request ids to the block number at which the request was made
     mapping(uint32 requestId => uint256 lockBlock) public requests;
 
+    /// @notice Creates a new instance of the RngWitnet contract
+    /// @param _witnetRandomness The address of the Witnet Randomness contract to use
     constructor(IWitnetRandomness _witnetRandomness) {
         witnetRandomness = _witnetRandomness;
     }
 
+    /// @notice Gets the Requestor contract for the given user. Creates a new one if it doesn't exist
+    /// @dev The Requestor contract holds the balance of Ether that a user has sent, so that they can withdraw
+    /// @param user The address of the user
+    /// @return The Requestor contract for the given user
     function getRequestor(address user) public returns (Requestor) {
         Requestor requestor = requestors[user];
         if (address(requestor) == address(0)) {
@@ -36,18 +51,20 @@ contract RngWitnet is IRng {
         return requestor;
     }
 
+    /// @notice Gets the block number at which the request was made
+    /// @param requestId The ID of the request used to get the results of the RNG service
+    /// @return The block number at which the request was made
     function requestedAtBlock(uint32 requestId) external override view returns (uint256) {
         return requests[requestId];
     }
 
-    /**
-    * @notice Gets the last request id used by the RNG service
-    * @return requestId The last request id used in the last request
-    */
+    /// @notice Gets the last request id used by the RNG service
+    /// @return requestId The last request id used in the last request
     function getLastRequestId() external view returns (uint32 requestId) {
         return lastRequestId;
     }
 
+    /// @notice Estimates the cost of the witnet randomness request
     function estimateRandomizeFee(uint256 _gasPrice) external view returns (uint256) {
         return witnetRandomness.estimateRandomizeFee(_gasPrice);
     }
