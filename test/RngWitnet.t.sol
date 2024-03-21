@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.21;
+pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
@@ -29,7 +29,7 @@ contract RngWitnetTest is Test {
 
     function testStartDraw() public {
         DrawManager drawManager = DrawManager(makeAddr("DrawManager"));
-        vm.mockCall(address(drawManager), abi.encodeWithSelector(drawManager.startDraw.selector, address(this), 1), abi.encode());
+        vm.mockCall(address(drawManager), abi.encodeWithSelector(drawManager.startDraw.selector, address(this), 1), abi.encode(1));
         vm.mockCall(address(witnetRandomness), 1e18, abi.encodeWithSelector(IWitnetRandomness.randomize.selector), abi.encode(0.5e18));
         rngWitnet.startDraw{value: 1e18}(1e18, drawManager, address(this));
         assertEq(address(rngWitnet.getRequestor(address(this))).balance, 1e18, "witnet balance should be 1e18");

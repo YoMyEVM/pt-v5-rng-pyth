@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.24;
 
 import { IWitnetRandomness } from "witnet/interfaces/IWitnetRandomness.sol";
 import { IRng } from "pt-v5-draw-manager/interfaces/IRng.sol";
 import { DrawManager } from "pt-v5-draw-manager/DrawManager.sol";
 
 import { Requestor } from "./Requestor.sol";
-
 
 /// @title RngWitnet
 /// @notice A contract that requests random numbers from the Witnet Randomness Oracle
@@ -65,10 +64,16 @@ contract RngWitnet is IRng {
     }
 
     /// @notice Estimates the cost of the witnet randomness request
+    /// @param _gasPrice The gas price that would be used for the randomize() request
+    /// @return The estimated gas cost of the randomize() request
     function estimateRandomizeFee(uint256 _gasPrice) external view returns (uint256) {
         return witnetRandomness.estimateRandomizeFee(_gasPrice);
     }
 
+    /// @notice Requests a random number from the Witnet Randomness Oracle
+    /// @param rngPaymentAmount The amount of Ether to send to the Witnet Randomness Oracle. This amount should be sent in this call, remaining from a previous call, or a combination thereof. The Requestor holds the current balance.
+    /// @return requestId The id of the request
+    /// @return lockBlock The block number at which the request was made
     function requestRandomNumber(uint256 rngPaymentAmount) public payable returns (uint32 requestId, uint256 lockBlock) {
         Requestor requestor = getRequestor(msg.sender);
         unchecked {
@@ -81,32 +86,35 @@ contract RngWitnet is IRng {
         emit RandomNumberRequested(requestId, msg.sender);
     }
 
-    function withdraw() external {
+    /// @notice Withdraws the balance of the Requestor contract of the caller
+    /// @return The amount of Ether withdrawn
+    function withdraw() external returns (uint256) {
         Requestor requestor = requestors[msg.sender];
-        requestor.withdraw(payable(msg.sender));
+        return requestor.withdraw(payable(msg.sender));
     }
 
-    /**
-    * @notice Checks if the request for randomness from the 3rd-party service has completed
-    * @dev For time-delayed requests, this function is used to check/confirm completion
-    * @param requestId The ID of the request used to get the results of the RNG service
-    * @return isCompleted True if the request has completed and a random number is available, false otherwise
-    */
+    /// @notice Checks if the request for randomness from the 3rd-party service has completed
+    /// @dev For time-delayed requests, this function is used to check/confirm completion
+    /// @param requestId The ID of the request used to get the results of the RNG service
+    /// @return isCompleted True if the request has completed and a random number is available, false otherwise
     function isRequestComplete(uint32 requestId) external view returns (bool isCompleted) {
         return witnetRandomness.isRandomized(requests[requestId]);
     }
 
-    /**
-    * @notice Gets the random number produced by the 3rd-party service
-    * @param requestId The ID of the request used to get the results of the RNG service
-    * @return randomNum The random number
-    */
+    /// @notice Gets the random number produced by the 3rd-party service
+    /// @param requestId The ID of the request used to get the results of the RNG service
+    /// @return randomNum The random number
     function randomNumber(uint32 requestId) external view returns (uint256 randomNum) {    
         return uint256(witnetRandomness.getRandomnessAfter(requests[requestId]));
     }
 
-    function startDraw(uint256 rngPaymentAmount, DrawManager _drawManager, address _rewardRecipient) external payable {
+    /// @notice Starts a draw using the random number from the Witnet Randomness Oracle
+    /// @param rngPaymentAmount The amount of Ether to send to the Witnet Randomness Oracle
+    /// @param _drawManager The DrawManager contract to call
+    /// @param _rewardRecipient The address of the reward recipient
+    /// @return The id of the draw
+    function startDraw(uint256 rngPaymentAmount, DrawManager _drawManager, address _rewardRecipient) external payable returns (uint24) {
         (uint32 requestId,) = requestRandomNumber(rngPaymentAmount);
-        _drawManager.startDraw(_rewardRecipient, requestId);
+        return _drawManager.startDraw(_rewardRecipient, requestId);
     }
 }
