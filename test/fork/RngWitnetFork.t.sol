@@ -15,9 +15,9 @@ contract RngWitnetForkTest is Test {
     uint256 fork;
 
     function setUp() public {
-        fork = vm.createFork("optimism-goerli");
+        fork = vm.createFork("sepolia");
         vm.selectFork(fork);
-        witnetRandomness = IWitnetRandomness(0x0123456fbBC59E181D76B6Fe8771953d1953B51a);
+        witnetRandomness = IWitnetRandomness(0xa579563E3ee6884e3b4cdE1BBb2fF6305686A83f);
         rngWitnet = new RngWitnet(witnetRandomness);
         vm.deal(address(this), 1000e18);
     }

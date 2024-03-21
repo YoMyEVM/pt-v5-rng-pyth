@@ -1,27 +1,44 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.24;
 
 import { IWitnetRandomness } from "witnet/interfaces/IWitnetRandomness.sol";
 
+/// @title Requestor
+/// @notice A contract that requests random numbers from the Witnet Randomness Oracle. Holds the unused balance of Ether.
 contract Requestor {
+    /// @notice Thrown when a new random number is requested
     error NotCreator();
 
+    /// @notice The address of the creator of the contract (RngWitnet)
     address public immutable creator;
 
+    /// @notice Creates a new instance of the Requestor contract and sets the creator as the sender
     constructor() {
         creator = msg.sender;
     }
 
+    /// @notice Requests a random number from the Witnet Randomness Oracle
+    /// @dev You can send Ether along with this call
+    /// @param value The amount of Ether to send to the Witnet Randomness Oracle
+    /// @param _witnetRandomness The Witnet Randomness Oracle contract
     function randomize(uint value, IWitnetRandomness _witnetRandomness) external payable onlyCreator {
         _witnetRandomness.randomize{ value: value }();
     }
 
-    function withdraw(address payable _to) external onlyCreator {
-        _to.transfer(address(this).balance);
+    /// @notice Withdraws the balance of the contract to the specified address
+    /// @dev can only be called the creator of the contract (RngWitnet)
+    /// @param _to The address to which the balance will be sent
+    /// @return The balance of the contract that was transferred
+    function withdraw(address payable _to) external onlyCreator returns (uint256) {
+        uint balance = address(this).balance;
+        _to.transfer(balance);
+        return balance;
     }
 
+    /// @notice Allows receive of ether
     receive() payable external {}
 
+    /// @notice Modifier to only allow calls by the creator
     modifier onlyCreator() {
         if(msg.sender != address(creator)) {
             revert NotCreator();
