@@ -1,16 +1,6 @@
-# Foundry template
+# PoolTogether RNG Witnet 0.7 integration
 
-Template to kickstart a Foundry project.
-
-## Getting started
-
-The easiest way to get started is by clicking the [Use this template](https://github.com/GenerationSoftware/foundry-template/generate) button at the top right of this page.
-
-If you prefer to go the CLI way:
-
-```
-forge init my-project --template https://github.com/GenerationSoftware/foundry-template
-```
+This is an RNG interface for Witnet 0.7
 
 ## Development
 
