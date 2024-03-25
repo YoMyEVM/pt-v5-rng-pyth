@@ -15,7 +15,7 @@ contract RngWitnetForkTest is Test {
     uint256 fork;
 
     function setUp() public {
-        fork = vm.createFork("optimism-sepolia");
+        fork = vm.createFork("optimism-sepolia", 9791733);
         vm.selectFork(fork);
         witnetRandomness = IWitnetRandomness(0xc0ffee84FD3B533C3fA408c993F59828395319A1);
         rngWitnet = new RngWitnet(witnetRandomness);
@@ -23,7 +23,7 @@ contract RngWitnetForkTest is Test {
     }
 
     function testRequestRandomNumberFromFork() external {
-        uint fee = 0.00001e18;
+        uint fee = 0.00002e18;
         (uint32 requestId, uint256 lockBlock, uint256 cost) = rngWitnet.requestRandomNumber{value: fee}(fee);
         assertEq(requestId, 1, "request id");
         assertEq(lockBlock, block.number, "block number");
