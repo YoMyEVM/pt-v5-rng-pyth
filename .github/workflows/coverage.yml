@@ -44,7 +44,7 @@ jobs:
         env:
           OPTIMISM_SEPOLIA_RPC_URL: ${{ secrets.OPTIMISM_SEPOLIA_RPC_URL }}
         run: |
-          forge coverage --no-match-contracts .*ForkTest --report lcov && lcov --remove lcov.info -o lcov.info 'test/*' 'script/*'
+          forge coverage --no-match-contract .*ForkTest --report lcov && lcov --remove lcov.info -o lcov.info 'test/*' 'script/*'
         id: coverage
 
       - name: Report code coverage
