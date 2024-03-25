@@ -21,8 +21,10 @@ contract Requestor {
     /// @dev You can send Ether along with this call
     /// @param value The amount of Ether to send to the Witnet Randomness Oracle
     /// @param _witnetRandomness The Witnet Randomness Oracle contract
-    function randomize(uint value, IWitnetRandomness _witnetRandomness) external payable onlyCreator {
-        _witnetRandomness.randomize{ value: value }();
+    /// @return The actual value used by the Randomness Oracle
+    function randomize(uint value, IWitnetRandomness _witnetRandomness) external payable onlyCreator returns (uint256) {
+        uint cost = _witnetRandomness.randomize{ value: value }();
+        return cost;
     }
 
     /// @notice Withdraws the balance of the contract to the specified address

@@ -21,9 +21,10 @@ contract RngWitnetTest is Test {
 
     function testRequestRandomNumber() external {
         vm.mockCall(address(witnetRandomness), 1e18, abi.encodeWithSelector(IWitnetRandomness.randomize.selector), abi.encode(0.5e18));
-        (uint32 requestId, uint256 lockBlock) = rngWitnet.requestRandomNumber{value: 1e18}(1e18);
+        (uint32 requestId, uint256 lockBlock, uint256 cost) = rngWitnet.requestRandomNumber{value: 1e18}(1e18);
         assertEq(requestId, 1);
         assertEq(lockBlock, block.number);
+        assertEq(cost, 0.5e18);
         assertEq(address(rngWitnet.getRequestor(address(this))).balance, 1e18, "witnet balance should be 1e18");
     }
 

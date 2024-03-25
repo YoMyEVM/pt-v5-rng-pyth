@@ -16,7 +16,8 @@ contract RngWitnet is IRng {
     /// @param sender The address that requested the random number
     event RandomNumberRequested(
         uint32 indexed requestId,
-        address indexed sender
+        address indexed sender,
+        uint256 cost
     );
     
     /// @notice The Witnet Randomness contract
@@ -74,16 +75,16 @@ contract RngWitnet is IRng {
     /// @param rngPaymentAmount The amount of Ether to send to the Witnet Randomness Oracle. This amount should be sent in this call, remaining from a previous call, or a combination thereof. The Requestor holds the current balance.
     /// @return requestId The id of the request
     /// @return lockBlock The block number at which the request was made
-    function requestRandomNumber(uint256 rngPaymentAmount) public payable returns (uint32 requestId, uint256 lockBlock) {
+    function requestRandomNumber(uint256 rngPaymentAmount) public payable returns (uint32 requestId, uint256 lockBlock, uint256 cost) {
         Requestor requestor = getRequestor(msg.sender);
         unchecked {
             requestId = ++lastRequestId;
             lockBlock = block.number;
         }
         requests[requestId] = lockBlock;
-        requestor.randomize{value: msg.value}(rngPaymentAmount, witnetRandomness);
+        cost = requestor.randomize{value: msg.value}(rngPaymentAmount, witnetRandomness);
 
-        emit RandomNumberRequested(requestId, msg.sender);
+        emit RandomNumberRequested(requestId, msg.sender, cost);
     }
 
     /// @notice Withdraws the balance of the Requestor contract of the caller
@@ -105,7 +106,7 @@ contract RngWitnet is IRng {
     /// @param requestId The ID of the request used to get the results of the RNG service
     /// @return randomNum The random number
     function randomNumber(uint32 requestId) external view returns (uint256 randomNum) {    
-        return uint256(witnetRandomness.getRandomnessAfter(requests[requestId]));
+        return uint256(witnetRandomness.fetchRandomnessAfter(requests[requestId]));
     }
 
     /// @notice Starts a draw using the random number from the Witnet Randomness Oracle
@@ -114,7 +115,7 @@ contract RngWitnet is IRng {
     /// @param _rewardRecipient The address of the reward recipient
     /// @return The id of the draw
     function startDraw(uint256 rngPaymentAmount, DrawManager _drawManager, address _rewardRecipient) external payable returns (uint24) {
-        (uint32 requestId,) = requestRandomNumber(rngPaymentAmount);
+        (uint32 requestId,,) = requestRandomNumber(rngPaymentAmount);
         return _drawManager.startDraw(_rewardRecipient, requestId);
     }
 }
