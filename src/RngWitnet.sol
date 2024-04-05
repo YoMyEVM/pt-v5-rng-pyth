@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-import { IWitnetRandomness } from "witnet/interfaces/IWitnetRandomness.sol";
+import { IWitnetRandomness, WitnetV2 } from "witnet/interfaces/IWitnetRandomness.sol";
 import { IRng } from "pt-v5-draw-manager/interfaces/IRng.sol";
 import { DrawManager } from "pt-v5-draw-manager/DrawManager.sol";
 
 import { Requestor } from "./Requestor.sol";
+
+error UnknownRequest(uint32 requestId);
 
 /// @title RngWitnet
 /// @notice A contract that requests random numbers from the Witnet Randomness Oracle
@@ -52,10 +54,10 @@ contract RngWitnet is IRng {
     }
 
     /// @notice Gets the block number at which the request was made
-    /// @param requestId The ID of the request used to get the results of the RNG service
+    /// @param _requestId The ID of the request used to get the results of the RNG service
     /// @return The block number at which the request was made
-    function requestedAtBlock(uint32 requestId) external override view returns (uint256) {
-        return requests[requestId];
+    function requestedAtBlock(uint32 _requestId) onlyValidRequest(_requestId) external override view returns (uint256) {
+        return requests[_requestId];
     }
 
     /// @notice Gets the last request id used by the RNG service
@@ -96,17 +98,24 @@ contract RngWitnet is IRng {
 
     /// @notice Checks if the request for randomness from the 3rd-party service has completed
     /// @dev For time-delayed requests, this function is used to check/confirm completion
-    /// @param requestId The ID of the request used to get the results of the RNG service
+    /// @param _requestId The ID of the request used to get the results of the RNG service
     /// @return isCompleted True if the request has completed and a random number is available, false otherwise
-    function isRequestComplete(uint32 requestId) external view returns (bool isCompleted) {
-        return witnetRandomness.isRandomized(requests[requestId]);
+    function isRequestComplete(uint32 _requestId) onlyValidRequest(_requestId) external view returns (bool) {
+        return witnetRandomness.isRandomized(requests[_requestId]);
+    }
+
+    /// @notice Checks if a given request has failed. If it has, `requestRandomNumber` can be triggered again.
+    /// @param _requestId The ID of the request to check
+    /// @return True if the Witnet request failed, false otherwise
+    function isRequestFailed(uint32 _requestId) onlyValidRequest(_requestId) public view returns (bool) {
+        return witnetRandomness.getRandomizeStatus(requests[_requestId]) == WitnetV2.ResponseStatus.Error;
     }
 
     /// @notice Gets the random number produced by the 3rd-party service
-    /// @param requestId The ID of the request used to get the results of the RNG service
+    /// @param _requestId The ID of the request used to get the results of the RNG service
     /// @return randomNum The random number
-    function randomNumber(uint32 requestId) external view returns (uint256 randomNum) {    
-        return uint256(witnetRandomness.fetchRandomnessAfter(requests[requestId]));
+    function randomNumber(uint32 _requestId) onlyValidRequest(_requestId) external view returns (uint256) {    
+        return uint256(witnetRandomness.fetchRandomnessAfter(requests[_requestId]));
     }
 
     /// @notice Starts a draw using the random number from the Witnet Randomness Oracle
@@ -117,5 +126,12 @@ contract RngWitnet is IRng {
     function startDraw(uint256 rngPaymentAmount, DrawManager _drawManager, address _rewardRecipient) external payable returns (uint24) {
         (uint32 requestId,,) = requestRandomNumber(rngPaymentAmount);
         return _drawManager.startDraw(_rewardRecipient, requestId);
+    }
+
+    modifier onlyValidRequest(uint32 _requestId) {
+        if (requests[_requestId] == 0) {
+            revert UnknownRequest(_requestId);
+        }
+        _;
     }
 }
