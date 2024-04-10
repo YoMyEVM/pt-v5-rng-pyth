@@ -68,7 +68,7 @@ contract RngWitnetTest is Test {
     }
 
     function testRandomNumber() public {
-        (uint32 requestId, uint256 lockBlock,) = requestRandomNumber();
+        (uint32 requestId,,) = requestRandomNumber();
         vm.mockCall(address(witnetRandomness), abi.encodeWithSelector(witnetRandomness.fetchRandomnessAfter.selector, requestId), abi.encode(777));
         assertEq(rngWitnet.randomNumber(requestId), 777);
     }
