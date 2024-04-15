@@ -10,15 +10,19 @@ import { Requestor } from "./Requestor.sol";
 error UnknownRequest(uint32 requestId);
 
 /// @title RngWitnet
+/// @author G9 Software Inc.
 /// @notice A contract that requests random numbers from the Witnet Randomness Oracle
 contract RngWitnet is IRng {
 
     /// @notice Emitted when a new random number is requested
     /// @param requestId The id of the request
     /// @param sender The address that requested the random number
+    /// @param paid The amount paid to the Witnet
+    /// @param cost The actual cost of the RNG request. The paid amount less the cost is refunded to the Requestor contract for the caller.
     event RandomNumberRequested(
         uint32 indexed requestId,
         address indexed sender,
+        uint256 paid,
         uint256 cost
     );
     
@@ -77,6 +81,7 @@ contract RngWitnet is IRng {
     /// @param rngPaymentAmount The amount of Ether to send to the Witnet Randomness Oracle. This amount should be sent in this call, remaining from a previous call, or a combination thereof. The Requestor holds the current balance.
     /// @return requestId The id of the request
     /// @return lockBlock The block number at which the request was made
+    /// @return cost The actual cost of the RNG request
     function requestRandomNumber(uint256 rngPaymentAmount) public payable returns (uint32 requestId, uint256 lockBlock, uint256 cost) {
         Requestor requestor = getRequestor(msg.sender);
         unchecked {
@@ -86,7 +91,7 @@ contract RngWitnet is IRng {
         requests[requestId] = lockBlock;
         cost = requestor.randomize{value: msg.value}(rngPaymentAmount, witnetRandomness);
 
-        emit RandomNumberRequested(requestId, msg.sender, cost);
+        emit RandomNumberRequested(requestId, msg.sender, rngPaymentAmount, cost);
     }
 
     /// @notice Withdraws the balance of the Requestor contract of the caller
@@ -128,6 +133,8 @@ contract RngWitnet is IRng {
         return _drawManager.startDraw(_rewardRecipient, requestId);
     }
 
+    /// @notice Reverts if the request id is unknown
+    /// @param _requestId The ID of the request to check
     modifier onlyValidRequest(uint32 _requestId) {
         if (requests[_requestId] == 0) {
             revert UnknownRequest(_requestId);
