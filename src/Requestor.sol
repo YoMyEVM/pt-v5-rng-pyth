@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import { IWitnetRandomness } from "witnet/interfaces/IWitnetRandomness.sol";
 
 /// @title Requestor
+/// @author G9 Software Inc.
 /// @notice A contract that requests random numbers from the Witnet Randomness Oracle. Holds the unused balance of Ether.
 contract Requestor {
     /// @notice Thrown when a new random number is requested
