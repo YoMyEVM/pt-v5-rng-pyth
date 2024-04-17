@@ -5,6 +5,7 @@
 [submodule "lib/witnet-solidity-bridge"]
 	path = lib/witnet-solidity-bridge
 	url = https://github.com/witnet/witnet-solidity-bridge
+	branch = 2.0.x
 [submodule "lib/solady"]
 	path = lib/solady
 	url = https://github.com/Vectorized/solady
