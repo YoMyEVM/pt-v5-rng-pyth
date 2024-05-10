@@ -5,17 +5,21 @@ import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 
 import { DrawManager } from "pt-v5-draw-manager/DrawManager.sol";
-import { IWitnetRandomness } from "witnet/interfaces/IWitnetRandomness.sol";
+import { IWitnetRandomness, WitnetOracle, WitnetV2 } from "witnet/interfaces/IWitnetRandomness.sol";
 import { RngWitnet } from "../src/RngWitnet.sol";
 
 contract RngWitnetTest is Test {
 
     IWitnetRandomness witnetRandomness;
+    WitnetOracle witnet;
     RngWitnet rngWitnet;
 
     function setUp() public {
+        witnet = WitnetOracle(makeAddr("WitnetOracle"));
+        vm.etch(address(witnet), "witnet" );
         witnetRandomness = IWitnetRandomness(makeAddr("WitnetRandomness"));
-        vm.etch(address(witnetRandomness), "witnet" );
+        vm.etch(address(witnetRandomness), "witnetRandomness" );
+        vm.mockCall(address(witnetRandomness), 0, abi.encodeWithSelector(witnetRandomness.witnet.selector), abi.encode(address(witnet)));
         rngWitnet = new RngWitnet(witnetRandomness);
         vm.deal(address(this), 1000e18);
     }
@@ -60,10 +64,12 @@ contract RngWitnetTest is Test {
     function testIsRequestFailed() public {
         (,uint256 lockBlock,) = requestRandomNumber();
 
-        vm.mockCall(address(witnetRandomness), abi.encodeWithSelector(witnetRandomness.getRandomizeStatus.selector, lockBlock), abi.encode(2));
+        vm.mockCall(address(witnetRandomness), abi.encodeWithSelector(witnetRandomness.getRandomizeData.selector, lockBlock), abi.encode(999, 0, 0));
+
+        vm.mockCall(address(witnet), abi.encodeWithSelector(witnet.getQueryResponseStatus.selector, 999), abi.encode(WitnetV2.ResponseStatus.Ready));
         assertEq(rngWitnet.isRequestFailed(1), false);
 
-        vm.mockCall(address(witnetRandomness), abi.encodeWithSelector(witnetRandomness.getRandomizeStatus.selector, lockBlock), abi.encode(3));
+        vm.mockCall(address(witnet), abi.encodeWithSelector(witnet.getQueryResponseStatus.selector, 999), abi.encode(WitnetV2.ResponseStatus.Error));
         assertEq(rngWitnet.isRequestFailed(1), true);
     }
 

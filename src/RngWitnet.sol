@@ -113,7 +113,8 @@ contract RngWitnet is IRng {
     /// @param _requestId The ID of the request to check
     /// @return True if the Witnet request failed, false otherwise
     function isRequestFailed(uint32 _requestId) onlyValidRequest(_requestId) public view returns (bool) {
-        return witnetRandomness.getRandomizeStatus(requests[_requestId]) == WitnetV2.ResponseStatus.Error;
+        (uint256 witnetQueryId,,) = witnetRandomness.getRandomizeData(requests[_requestId]);
+        return witnetRandomness.witnet().getQueryResponseStatus(witnetQueryId) == WitnetV2.ResponseStatus.Error;
     }
 
     /// @notice Gets the random number produced by the 3rd-party service
