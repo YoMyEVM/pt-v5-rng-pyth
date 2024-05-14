@@ -47,15 +47,15 @@ jobs:
           forge coverage --no-match-contract .*ForkTest --report lcov && lcov --remove lcov.info -o lcov.info
         id: coverage
 
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: lcov-info
+          path: lcov.info
+
       - name: Report code coverage
         uses: zgosalvez/github-actions-report-lcov@v1.5.0
         with:
           coverage-files: lcov.info
           minimum-coverage: 100
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v4
-        with:
-          name: lcov-info
-          path: lcov.info
