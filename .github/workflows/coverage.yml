@@ -44,8 +44,14 @@ jobs:
         env:
           OPTIMISM_SEPOLIA_RPC_URL: ${{ secrets.OPTIMISM_SEPOLIA_RPC_URL }}
         run: |
-          forge coverage --no-match-contract .*ForkTest --report lcov && lcov --remove lcov.info -o lcov.info 'test/*' 'script/*'
+          forge coverage --no-match-contract .*ForkTest --report lcov && lcov --remove lcov.info -o lcov.info
         id: coverage
+
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          name: lcov-info
+          path: lcov.info
 
       - name: Report code coverage
         uses: zgosalvez/github-actions-report-lcov@v1.5.0
