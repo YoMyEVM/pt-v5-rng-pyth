@@ -57,7 +57,19 @@ contract RngWitnetTest is Test {
 
     function test_isRequestComplete() public {
         (uint32 requestId,,) = requestRandomNumber();
-        vm.mockCall(address(witnetRandomness), abi.encodeWithSelector(witnetRandomness.isRandomized.selector, requestId), abi.encode(true));
+        uint256 witnetQueryId = 12345;
+        vm.mockCall(address(witnetRandomness), abi.encodeWithSelector(witnetRandomness.getRandomizeData.selector, rngWitnet.requests(requestId)), abi.encode(witnetQueryId,0,0));
+
+        // not completed
+        vm.mockCall(address(witnetRandomness.witnet()), abi.encodeWithSelector(witnet.getQueryResponseStatus.selector, witnetQueryId), abi.encode(WitnetV2.ResponseStatus.Void));
+        assertEq(rngWitnet.isRequestComplete(requestId), false);
+        vm.mockCall(address(witnetRandomness.witnet()), abi.encodeWithSelector(witnet.getQueryResponseStatus.selector, witnetQueryId), abi.encode(WitnetV2.ResponseStatus.Awaiting));
+        assertEq(rngWitnet.isRequestComplete(requestId), false);
+        vm.mockCall(address(witnetRandomness.witnet()), abi.encodeWithSelector(witnet.getQueryResponseStatus.selector, witnetQueryId), abi.encode(WitnetV2.ResponseStatus.Error));
+        assertEq(rngWitnet.isRequestComplete(requestId), false);
+
+        // completed
+        vm.mockCall(address(witnetRandomness.witnet()), abi.encodeWithSelector(witnet.getQueryResponseStatus.selector, witnetQueryId), abi.encode(WitnetV2.ResponseStatus.Ready));
         assertEq(rngWitnet.isRequestComplete(requestId), true);
     }
 
