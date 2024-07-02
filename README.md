@@ -1,4 +1,4 @@
-# PoolTogether RNG Witnet 0.7 integration
+# PoolTogether RNG Witnet 2.0 integration
 
 This is an RNG interface for Witnet 2.0
 
