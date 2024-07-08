@@ -106,7 +106,8 @@ contract RngWitnet is IRng {
     /// @param _requestId The ID of the request used to get the results of the RNG service
     /// @return isCompleted True if the request has completed and a random number is available, false otherwise
     function isRequestComplete(uint32 _requestId) onlyValidRequest(_requestId) external view returns (bool) {
-        return witnetRandomness.isRandomized(requests[_requestId]);
+        (uint256 witnetQueryId,,) = witnetRandomness.getRandomizeData(requests[_requestId]);
+        return witnetRandomness.witnet().getQueryResponseStatus(witnetQueryId) == WitnetV2.ResponseStatus.Ready;
     }
 
     /// @notice Checks if a given request has failed. If it has, `requestRandomNumber` can be triggered again.
