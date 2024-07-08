@@ -35,7 +35,7 @@ contract Requestor {
     /// @return The balance of the contract that was transferred
     function withdraw(address payable _to) external onlyCreator returns (uint256) {
         uint balance = address(this).balance;
-        _to.transfer(balance);
+        _to.call{value: balance}("");
         return balance;
     }
 
