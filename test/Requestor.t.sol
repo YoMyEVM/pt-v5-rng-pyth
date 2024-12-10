@@ -2,49 +2,29 @@
 pragma solidity ^0.8.24;
 
 import "forge-std/Test.sol";
-import "forge-std/console2.sol";
-
-import { IWitnetRandomness } from "witnet/interfaces/IWitnetRandomness.sol";
-import { Requestor, NotCreator } from "../src/Requestor.sol";
+import { Requestor } from "../src/Requestor.sol";
 
 contract RequestorTest is Test {
-
     Requestor requestor;
-    IWitnetRandomness witnetRandomness;
-    address alice;
 
     function setUp() public {
-        alice = makeAddr("Alice");
         requestor = new Requestor();
-        witnetRandomness = IWitnetRandomness(makeAddr("WitnetRandomness"));
-        vm.etch(address(witnetRandomness), "witnetRandomness" );
     }
 
-    function test_randomize() public {
-        vm.mockCall(address(witnetRandomness), 1e18, abi.encodeWithSelector(IWitnetRandomness.randomize.selector), abi.encode(0.5e18));
-        assertEq(requestor.randomize{value: 1e18}(1e18, witnetRandomness), 0.5e18);
+    function testWithdrawTo() public {
+        // Deal this test contract some funds
+        vm.deal(address(this), 1e18);
+        // Transfer funds to the requestor contract so it has a balance
+        payable(address(requestor)).transfer(1e18);
+
+        uint256 beforeBalance = address(this).balance;
+        requestor.withdrawTo(payable(address(this)));
+        uint256 afterBalance = address(this).balance;
+
+        // afterBalance should now be beforeBalance + 1e18
+        assertEq(afterBalance, beforeBalance + 1e18, "Withdraw did not return correct amount");
     }
 
-    function test_randomize_NotOwner() public {
-        vm.expectRevert(abi.encodeWithSelector(NotCreator.selector));
-        vm.prank(alice);
-        requestor.randomize(1, witnetRandomness);
-    }
-
-    function test_withdraw() public {
-        vm.deal(address(requestor), 1000e18);
-        uint beforeBalance = address(this).balance;
-        requestor.withdraw(payable(address(this)));
-        uint delta = address(this).balance - beforeBalance;
-        assertEq(delta, 1000e18);
-    }
-
-    function test_withdraw_NotOwner() public {
-        vm.expectRevert(abi.encodeWithSelector(NotCreator.selector));
-        vm.prank(alice);
-        requestor.withdraw(payable(address(this)));
-    }
-
-    /// @notice Allows receive of ether
-    receive() payable external {}
+    // If needed, add a receive function here so this test contract can accept ETH
+    receive() external payable {}
 }

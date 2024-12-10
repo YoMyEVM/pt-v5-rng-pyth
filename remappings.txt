@@ -3,3 +3,4 @@ forge-std/=lib/forge-std/src/
 pt-v5-draw-manager/=lib/pt-v5-draw-manager/src/
 solady/=lib/solady/src/
 witnet/=lib/witnet-solidity-bridge/contracts/
+@pythnetwork/entropy-sdk-solidity/=node_modules/@pythnetwork/entropy-sdk-solidity/

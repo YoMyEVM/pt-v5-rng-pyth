@@ -4,30 +4,38 @@ pragma solidity ^0.8.21;
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 
-import { IWitnetRandomness } from "witnet/interfaces/IWitnetRandomness.sol";
-import { RngWitnet } from "../../src/RngWitnet.sol";
+import { IEntropy } from "@pythnetwork/entropy-sdk-solidity/IEntropy.sol";
+import { RngPyth } from "../../src/RngPyth.sol";
 
-contract RngWitnetForkTest is Test {
-
-    IWitnetRandomness witnetRandomness;
-    RngWitnet rngWitnet;
+contract RngPythForkTest is Test {
+    IEntropy pythEntropy;
+    RngPyth rngPyth;
 
     uint256 fork;
 
     function setUp() public {
-        fork = vm.createFork("optimism-sepolia", 9791733);
+        // Create a fork of the ApeChain network. If you want a specific block number, specify it.
+        // If not, you can omit the block number argument and Foundry will use the latest.
+        fork = vm.createFork("apechain");
         vm.selectFork(fork);
-        witnetRandomness = IWitnetRandomness(0xc0ffee84FD3B533C3fA408c993F59828395319A1);
-        rngWitnet = new RngWitnet(witnetRandomness);
+
+        // Replace with the actual Pyth Entropy contract address on ApeChain if available.
+        // If no known address, deploy a mock or skip this test.
+        pythEntropy = IEntropy(0x36825bf3Fbdf5a29E2d5148bfe7Dcf7B5639e320); 
+
+        rngPyth = new RngPyth(pythEntropy);
+
         vm.deal(address(this), 1000e18);
     }
 
     function testRequestRandomNumberFromFork() external {
-        uint fee = 0.00002e18;
-        (uint32 requestId, uint256 lockBlock, uint256 cost) = rngWitnet.requestRandomNumber{value: fee}(fee);
+        address defaultProvider = pythEntropy.getDefaultProvider();
+        uint256 fee = pythEntropy.getFee(defaultProvider);
+
+        (uint32 requestId, uint256 lockBlock) = rngPyth.requestRandomNumber{value: fee}(fee);
         assertEq(requestId, 1, "request id");
         assertEq(lockBlock, block.number, "block number");
-        assertGt(cost, 0, "cost");
+        assertGt(fee, 0, "fee");
     }
 
     receive() external payable {}
